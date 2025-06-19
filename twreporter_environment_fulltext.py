@@ -1,4 +1,5 @@
 import requests, bs4, pandas as pd, textwrap, re, time
+from pathlib import Path
 
 URL      = "https://www.twreporter.org/a/after-a-formosan-black-bear-shot-dead-in-hualien-zhuoxi-2"
 HEADERS  = {"User-Agent": "Mozilla/5.0"}
@@ -38,15 +39,18 @@ def clean_body(soup):
 def safe_filename(name):                  # 轉安全檔名
     return re.sub(r'[\\/:*?"<>|]', "_", name.strip())
 
-def save_txt(title, url, content, date_str=None):
-    fname = safe_filename(title) + ".txt"
-    with open(fname, "w", encoding="utf-8") as f:
-        f.write(f"{'='*len(title)}\n{title}\n{'='*len(title)}\n")
-        if date_str:
-            f.write(f"（{date_str}）\n")
-        f.write(f"{url}\n\n")
-        f.write(content)
-    print(f"✅ 已寫入 {fname}")
+OUTPUT_DIR = Path(__file__).parent / "output" / "twreporter"
+
+def save_txt(title: str, url: str, content: str) -> None:
+    """將文章存成 UTF-8 .txt，檔名用 slug 化的 title。"""
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)             # 若不存在就建立
+    slug = "".join(c if c.isalnum() else "_" for c in title)[:80]
+    filepath = OUTPUT_DIR / f"{slug}.txt"
+
+    with filepath.open("w", encoding="utf-8") as f:
+        f.write(f"{title}\n{url}\n\n{content}")
+
+    print(f"✅ Saved to {filepath.relative_to(Path.cwd())}")
 
 rows = []
 
