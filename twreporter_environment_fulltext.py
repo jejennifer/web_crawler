@@ -16,8 +16,10 @@ def clean_body(soup):
 
     CSS_TRASH = [
         # 工具列、募款、分類
-        "#mobile-tool-bar", ".desktop-tools__ToolsBlock",
-        ".metadata__CategorySetFlexBox-sc-1c3910m-0", ".donation-box__Container-sc-1uszvr7-0",
+        "#mobile-tool-bar",
+        ".desktop-tools__ToolsBlock",
+        ".metadata__CategorySetFlexBox-sc-1c3910m-0",
+        ".donation-box__Container-sc-1uszvr7-0",
         ".license__Text-sc-1vtq5dr-0.iYYeim",
 
         # 相關文章整塊
@@ -25,14 +27,14 @@ def clean_body(soup):
 
         # 內文插圖的 FigCaption
         "figcaption",
+
+        # 卡片殘留文字
+        '[class^="card__Desc"]',
+        '[class^="card__PublishedDate"]',
     ]
     for css in CSS_TRASH:
         for n in body.select(css):
             n.decompose()
-
-    # 卡片殘留文字（摘要、日期）
-    for n in body.select('[class^="card__Desc"], [class^="card__PublishedDate"]'):
-        n.decompose()
 
     return body
 
@@ -42,7 +44,6 @@ def safe_filename(name):                  # 轉安全檔名
 OUTPUT_DIR = Path(__file__).parent / "output" / "twreporter"
 
 def save_txt(title: str, url: str, content: str) -> None:
-    """將文章存成 UTF-8 .txt，檔名用 slug 化的 title。"""
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)             # 若不存在就建立
     slug = "".join(c if c.isalnum() else "_" for c in title)[:80]
     filepath = OUTPUT_DIR / f"{slug}.txt"
