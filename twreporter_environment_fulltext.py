@@ -1,7 +1,6 @@
 import requests, bs4, pandas as pd, textwrap, re, time
 from pathlib import Path
 
-URL      = "https://www.twreporter.org/a/after-a-formosan-black-bear-shot-dead-in-hualien-zhuoxi-2"
 HEADERS  = {"User-Agent": "Mozilla/5.0"}
 
 def get_soup(url):
@@ -55,16 +54,28 @@ def save_txt(title: str, url: str, content: str) -> None:
 
 rows = []
 
-# ---------- 抓 1 篇 ----------
-soup  = get_soup(URL)
-title = soup.select_one("meta[property='og:title']")["content"]
+excel_path = "../01.網頁初步文章篩選/twreporter_環境永續_能源與氣候變遷.xlsx"
 
-body  = clean_body(soup)
-paras = [p.get_text(" ", strip=True) for p in body.find_all("p") if p.get_text(strip=True)]
-full  = "\n".join(paras)
+df = pd.read_excel(excel_path)
 
-save_txt(title, URL, full)
+# 假設你的 Excel 欄名是「標題」「網址」
+for i, row in df.iterrows():
+    url   = row["網址"]
+    title = row["標題"]
 
-print("\n【預覽 120 字】\n", textwrap.shorten(full, 120, placeholder=" …"))
+    try:
+        print(f"\n({i+1}/{len(df)}) 抓取中: {title}")
+        #soup  = get_soup(url)
+        body  = clean_body(soup)
+        paras = [p.get_text(" ", strip=True) for p in body.find_all("p") if p.get_text(strip=True)]
+        full  = "\n".join(paras)
+
+        save_txt(title, url, full)
+
+        print("【預覽 120 字】", textwrap.shorten(full, 120, placeholder=" …"))
+
+        time.sleep(1)   # 避免連太快
+    except Exception as e:
+        print(f"Error on {url}: {e}")
 
 
