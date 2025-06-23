@@ -48,34 +48,33 @@ def save_txt(title: str, url: str, content: str) -> None:
     filepath = OUTPUT_DIR / f"{slug}.txt"
 
     with filepath.open("w", encoding="utf-8") as f:
-        f.write(f"{title}\n{url}\n\n{content}")
+        f.write(f"{title}\n\n{content}")#f.write(f"{title}\n{url}\n\n{content}")
 
-    print(f"✅ Saved to {filepath.relative_to(Path.cwd())}")
+    print(f"Saved to {filepath.relative_to(Path.cwd())}")
 
-rows = []
+def main():
+    BASE_DIR = Path(__file__).parent
+    excel_path = BASE_DIR.parent / "01.網頁初步文章篩選" / "twreporter_環境永續_能源與氣候變遷.xlsx"
 
-excel_path = "../01.網頁初步文章篩選/twreporter_環境永續_能源與氣候變遷.xlsx"
+    df = pd.read_excel(excel_path)
 
-df = pd.read_excel(excel_path)
+    for i, row in df.iterrows():
+        url   = row["網址"]
+        title = row["標題"]
 
-# 假設你的 Excel 欄名是「標題」「網址」
-for i, row in df.iterrows():
-    url   = row["網址"]
-    title = row["標題"]
+        try:
+            print(f"\n({i+1}/{len(df)}) {title}")
+            soup  = get_soup(url)
+            body  = clean_body(soup)
+            paras = [p.get_text(" ", strip=True) for p in body.find_all("p") if p.get_text(strip=True)]
+            full  = "\n".join(paras)
 
-    try:
-        print(f"\n({i+1}/{len(df)}) 抓取中: {title}")
-        #soup  = get_soup(url)
-        body  = clean_body(soup)
-        paras = [p.get_text(" ", strip=True) for p in body.find_all("p") if p.get_text(strip=True)]
-        full  = "\n".join(paras)
+            save_txt(title, url, full)
 
-        save_txt(title, url, full)
+            print("【預覽 120 字】", textwrap.shorten(full, 120, placeholder=" …"))
+            time.sleep(1)
+        except Exception as e:
+            print(f"Error on {url}: {e}")
 
-        print("【預覽 120 字】", textwrap.shorten(full, 120, placeholder=" …"))
-
-        time.sleep(1)   # 避免連太快
-    except Exception as e:
-        print(f"Error on {url}: {e}")
-
-
+if __name__ == "__main__":
+    main()
