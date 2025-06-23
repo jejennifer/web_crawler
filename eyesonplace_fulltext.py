@@ -1,7 +1,7 @@
 import requests, bs4, pandas as pd, textwrap, re, time
 from pathlib import Path
 
-URL      = "https://eyesonplace.net/2025/06/18/28085/"
+#URL      = "https://eyesonplace.net/2025/06/18/28085/"
 HEADERS  = {"User-Agent": "Mozilla/5.0"}
 
 def get_soup(url):
@@ -35,22 +35,35 @@ def save_txt(title: str, url: str, content: str) -> None:
     filepath = OUTPUT_DIR / f"{slug}.txt"
 
     with filepath.open("w", encoding="utf-8") as f:
-        f.write(f"{title}\n{url}\n\n{content}")
+        f.write(f"{title}\n\n{content}")#f.write(f"{title}\n{url}\n\n{content}")
 
     print(f"✅ Saved to {filepath.relative_to(Path.cwd())}")
 
-rows = []
+def main():
+    BASE_DIR = Path(__file__).parent
+    excel_path = BASE_DIR.parent / "01.網頁初步文章篩選" / "eyesonplace_韌性與調適.xlsx"
 
-# ---------- 抓 1 篇 ----------
-soup  = get_soup(URL)
-title   = soup.select_one("h1.wp-block-post-title").get_text(strip=True)
+    df = pd.read_excel(excel_path)
 
-body  = clean_body(soup)
-paras = [p.get_text(" ", strip=True) for p in body.find_all("p") if p.get_text(strip=True)]
-full  = "\n".join(paras)
+    for i, row in df.iterrows():
+        url   = row["網址"]
+        title = row["標題"]
 
-save_txt(title, URL, full)
+        try:
+            print(f"\n({i+1}/{len(df)}) {title}")
+            soup  = get_soup(url)
+            body  = clean_body(soup)
+            paras = [p.get_text(" ", strip=True) for p in body.find_all("p") if p.get_text(strip=True)]
+            full  = "\n".join(paras)
 
-print("\n【預覽 120 字】\n", textwrap.shorten(full, 120, placeholder=" …"))
+            save_txt(title, url, full)
+
+            print("【預覽 120 字】", textwrap.shorten(full, 120, placeholder=" …"))
+            time.sleep(1)
+        except Exception as e:
+            print(f"Error on {url}: {e}")
+
+if __name__ == "__main__":
+    main()
 
 
