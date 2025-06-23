@@ -1,3 +1,4 @@
+from turtle import title
 import requests, bs4, pandas as pd, textwrap, re, time
 from pathlib import Path
 
@@ -26,8 +27,9 @@ def clean_body(soup):
 
     return body
 
-def safe_filename(name):                  # 轉安全檔名
-    return re.sub(r'[\\/:*?"<>|]', "_", name.strip())
+def safe_filename(name):
+    cleaned = re.sub(r'[\\/:*?"<>|]', "_", name.strip())
+    return cleaned                  # 轉安全檔名
 
 OUTPUT_DIR = Path(__file__).parent / "output" / "e-info"
 
@@ -49,14 +51,16 @@ def main():
 
     for i, row in df.iterrows():
         url   = row["網址"]
-        title = row["標題"]
 
         try:
-            print(f"\n({i+1}/{len(df)}) {title}")
             soup  = get_soup(url)
             body  = clean_body(soup)
             paras = [p.get_text(" ", strip=True) for p in body.find_all("p") if p.get_text(strip=True)]
             full  = "\n".join(paras)
+
+            h1 = soup.select_one("h1.title")
+            title = h1.get_text(" ", strip=True) if h1 else "no-title"
+            print(f"({i+1}/{len(df)}) {title}")
 
             save_txt(title, url, full)
 
@@ -64,26 +68,31 @@ def main():
             time.sleep(1)
         except Exception as e:
             print(f"Error on {url}: {e}")
-            
-#單篇文章測試
+
+# #單篇文章測試
 # def run_single(url: str):
 #     soup = get_soup(url)
+
 #     # 標題
 #     h1 = soup.select_one("h1.title")
 #     title = h1.get_text(" ", strip=True) if h1 else "no-title"
+
 #     # 正文
 #     body  = clean_body(soup)  
+    
 #     full_text = "\n".join(
 #     line.strip()
 #     for line in body.get_text("\n").splitlines()
 #     if line.strip()
 #     )
+
 #     # 存檔
 #     save_txt(title, url, full_text)
 #     print("===== 標題 =====")
 #     print(title)
 #     print("\n===== Preview 120 chars =====")
 #     print(textwrap.shorten(full_text, 120, placeholder=" …"))
+
 # def main():
 #     TEST_URL = "https://e-info.org.tw/node/241392"   # 先填一篇單篇網址
 #     run_single(TEST_URL)
